@@ -29,10 +29,7 @@ const config = {
     },
 
     plugins: [
-        new HtmlWebpackPlugin({
-            filename: "index.html",
-            template: "src/index.html"
-        }),
+        new HtmlWebpackPlugin(),
         new StatoscopePlugin({
             saveStatsTo: 'stats.json',
             saveOnlyStats: false,
@@ -45,14 +42,19 @@ const config = {
         assetModuleFilename: '[name][ext]',
         clean: true
     },
+    performance: {
+        hints: false,
+        maxAssetSize: 512000,
+        maxEntrypointSize: 512000
+    },
     devServer: {
         port: 9000,
         compress: true,
         hot: true,
         open: true,
-        static: {
-            directory: path.join(__dirname, 'dist')
-        }
+        // static: {
+        //     directory: path.join(__dirname, 'dist')
+        // }
 
     },
     optimization: {
@@ -77,8 +79,9 @@ const config = {
             },
             {
 
-                test: /\.(png|ico)$/,
+                test: /\.(png|ico)$/i,
                 use: ['file-loader'],
+                type: 'assets/resource'
             },
             {
 
