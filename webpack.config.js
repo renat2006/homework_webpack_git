@@ -1,102 +1,122 @@
-const path = require('path');
-const lodash = require('lodash');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const StatoscopePlugin = require('@statoscope/webpack-plugin').default;
+/* eslint-disable quotes */
+const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const StatoscopePlugin = require("@statoscope/webpack-plugin").default;
+const LodashModuleReplacementPlugin = require("lodash-webpack-plugin");
 
 const config = {
-    mode: 'production',
-    target: 'web',
-
-    entry: {
-        about: {
-            import: './src/pages/About.js',
-            dependOn: 'shared',
+  entry: {
+    about: "./src/pages/About.js",
+    TodoItem: "./src/components/TodoItem.js",
+    TodoList: { import: "./src/components/TodoList.js", dependOn: ["TodoItem"] },
+    home: { import: "./src/pages/Home.js", dependOn: ["TodoList"] },
+    index: { import: "./src/index.js", dependOn: ["about", "home"] },
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: "./src/index.html", // путь к файлу index.html
+    }),
+    new StatoscopePlugin({
+      saveStatsTo: "stats.json",
+      saveOnlyStats: false,
+      open: false,
+    }),
+    new LodashModuleReplacementPlugin({
+      collections: true,
+      paths: true,
+    }),
+  ],
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].[contenthash].js",
+  },
+  mode: "production",
+  devServer: {
+    static: path.resolve(__dirname, "./dist"),
+    compress: true,
+    port: 8080,
+    open: true,
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/i,
+        use: "babel-loader",
+        exclude: /node_modules/,
+        resolve: {
+          extensions: [".js"],
         },
-        home: {
-            import: './src/pages/Home.js',
-            dependOn: 'shared',
-        },
-        shared: 'lodash',
-
-
-    },
-    externals: {
-        lodash: {
-            about: 'lodash',
-            home: 'lodash',
-            root: '_',
-        },
-    },
-
-    plugins: [
-        new HtmlWebpackPlugin(),
-        new StatoscopePlugin({
-            saveStatsTo: 'stats.json',
-            saveOnlyStats: false,
-            open: false,
-        }),
+        sideEffects: false,
+      },
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
+      },
+      // @TODO css rule
     ],
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: '[name].[contenthash].js',
-        assetModuleFilename: '[name][ext]',
-        clean: true
-    },
-    performance: {
-        hints: false,
-        maxAssetSize: 512000,
-        maxEntrypointSize: 512000
-    },
-    devServer: {
-        port: 9000,
-        compress: true,
-        hot: true,
-        open: true,
-        // static: {
-        //     directory: path.join(__dirname, 'dist')
-        // }
-
-    },
-    optimization: {
-        minimize: true,
-        moduleIds: 'deterministic',
-        innerGraph: true,
-        concatenateModules: true,
-        runtimeChunk: 'single',
-        splitChunks: {
-            minChunks: 2,
-            chunks: 'all',
-            minSize: 0,
+  },
+  optimization: {
+    usedExports: true,
+    concatenateModules: true,
+    minimize: true,
+    moduleIds: "deterministic",
+    innerGraph: true,
+    providedExports: true,
+    splitChunks: {
+      minSize: 20000,
+      minRemainingSize: 0,
+      maxAsyncRequests: 30,
+      maxInitialRequests: 30,
+      enforceSizeThreshold: 50000,
+      minChunks: 1,
+      chunks: "all",
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10,
+          reuseExistingChunk: true,
         },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
     },
-    module: {
-        rules: [
-            {
-                test: /\.css$/,
-                use: ['style-loader', 'css-loader']
-
-
-            },
-            {
-
-                test: /\.(png|ico)$/i,
-                use: ['file-loader'],
-                type: 'assets/resource'
-            },
-            {
-
-                test: /\.js$/,
-                loader: 'babel-loader',
-                exclude: '/node_modules/'
-            },
-
-        ],
+    runtimeChunk: {
+      name: "runtime",
     },
-    // @TODO optimizations
-    // @TODO lodash treeshaking
-    // @TODO chunk for lodash
-    // @TODO chunk for runtime
-    // @TODO fallback for crypto
+  },
+  target: "web",
+
+  resolve: {
+    alias: {
+      "crypto-browserify": path.resolve(__dirname, "src/crypto-fall.js"),
+    },
+    fallback: {
+      buffer: require.resolve("buffer"),
+      stream: false,
+      crypto: require.resolve("crypto"),
+    },
+    modules: [
+      path.resolve(__dirname, "node_modules"),
+      path.resolve(__dirname, "node_modules/ui/node_modules"),
+    ],
+  },
+  performance: {
+    hints: false,
+    maxAssetSize: 512000,
+    maxEntrypointSize: 512000,
+  },
+  stats: {
+    children: true,
+  },
+
+  // @TODO optimizations
+  // @TODO lodash treeshaking
+  // @TODO chunk for lodash
+  // @TODO chunk for runtime
+  // @TODO fallback for crypto
 };
 
 module.exports = config;
